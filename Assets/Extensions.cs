@@ -26,20 +26,20 @@ public class Triangle
         {
             if (_vP2P1 == null)
                 _vP2P1 = P2 - P1;
-            return _vP2P1;
+            return (Vector3)_vP2P1;
         }
     }
-    private Vector3 _vP2P1;
+    private Vector3? _vP2P1 = null;
     public Vector3 vP3P1
     {
         get
         {
             if (_vP3P1 == null)
                 _vP3P1 = P3 - P1;
-            return _vP3P1;
+            return (Vector3)_vP3P1;
         }
     }
-    private Vector3 _vP3P1;
+    private Vector3? _vP3P1 = null;
 
     public float Area
     {
@@ -58,10 +58,10 @@ public class Triangle
         {
             if (_midpoint == null)
                 _midpoint = (P1 + P2 + P3) / 3;
-            return _midpoint;
+            return (Vector3)_midpoint;
         }
     }
-    private Vector3 _midpoint;
+    private Vector3? _midpoint = null;
 
     public Vector3 Normal
     {
@@ -70,12 +70,12 @@ public class Triangle
             if (_normal == null)
             {
                 _normal = Vector3.Cross(vP2P1, vP3P1);
-                _normal = Vector3.Normalize(_normal);
+                _normal = Vector3.Normalize((Vector3)_normal);
             }
-            return _normal;
+            return (Vector3)_normal;
         }
     }
-    private Vector3 _normal;
+    private Vector3? _normal = null;
 
     public Triangle(Vector3 p1, Vector3 p2, Vector3 p3)
     {

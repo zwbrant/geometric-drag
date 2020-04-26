@@ -38,46 +38,41 @@ public class FuckinAbout : MonoBehaviour
             v2 = transform.TransformPoint(_mesh.vertices[_mesh.triangles[i + 1]]);
             v3 = transform.TransformPoint(_mesh.vertices[_mesh.triangles[i + 2]]);
 
-            // calculate two side-vectors of triangle
-            Vec3 v2v1 = v2 - v1;
-            Vec3 v3v1 = v3 - v1;
-
-            //
-            var triArea = Vec3.Cross(v2v1, v3v1).magnitude * .5f;
-
-            Vec3 triNormal = Vec3.Cross(v2v1, v3v1);
-            triNormal = Vec3.Normalize(triNormal);
-
-            Vec3 midPoint = (v1 + v2 + v3) / 3;
+            var tri = new Triangle(v1, v2, v3);
 
             // save triangle normal
-            normals[i / 3] = triNormal;
+            normals[i / 3] = tri.Normal;
 
-            
-
+          
             //Debug.DrawLine(pos, pos + dragVect);
 
             // calculate the angle of this triangles resistance
-
-            var cosAngle = Vec3.Dot(triNormal, dragVect) / (dragVect.magnitude * triNormal.magnitude);
+            var cosAngle = Vec3.Dot(tri.Normal, dragVect) / (dragVect.magnitude * tri.Normal.magnitude);
             var angle = Mathf.Acos(cosAngle);
 
+            // magnitude of drag: 180 = 1, 135 = 0.5, < 90 = 0
             var dragMag = Mathf.Clamp((angle - Mathf.PI / 2) / (Mathf.PI / 2), 0, 1);
 
             //Debug.DrawLine(midPoint, midPoint + (surfNorm * triArea), Color.red);
 
-            var c = Color.Lerp(Color.green, Color.red, dragMag);
-            _colors[_mesh.triangles[i]] = c;
-            _colors[_mesh.triangles[i + 1]] = c;
-            _colors[_mesh.triangles[i + 2]] = c;
-
-            var dragForce = -triNormal * triArea * dragMag * dragVect.magnitude * DragMulti;
+            var dragForce = -tri.Normal * tri.Area * dragMag * dragVect.magnitude * DragMulti;
                 
-            RBody.AddForceAtPosition(dragForce, midPoint);
+            if (dragForce.magnitude > 0f)
+                RBody.AddForceAtPosition(dragForce, tri.Midpoint);
+            
             //Debug.DrawLine(midPoint, midPoint + dragForce * 20f, Color.yellow);
 
+            UpdateDebugColors(i, dragMag);
         }
 
         _mesh.colors = _colors;
+    }
+
+    private void UpdateDebugColors(int vertexIndex, float dragMag)
+    {
+        var c = Color.Lerp(Color.green, Color.red, dragMag);
+        _colors[_mesh.triangles[vertexIndex]] = c;
+        _colors[_mesh.triangles[vertexIndex + 1]] = c;
+        _colors[_mesh.triangles[vertexIndex + 2]] = c;
     }
 }
