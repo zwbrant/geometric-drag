@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using Zane;
 using Vec3 = UnityEngine.Vector3;
 
 [RequireComponent(typeof(MeshFilter))]
-public class FuckinAbout : MonoBehaviour
+public class DragSolver : MonoBehaviour
 {
     [Range(0, 1f)]
     public float DragMulti = .01f;
@@ -59,7 +60,7 @@ public class FuckinAbout : MonoBehaviour
         _nAngleMags = new NativeArray<float>(_mesh.triangles.Length / 3, Allocator.TempJob);
 
 
-        var job = new VerletJob() {
+        var job = new DragUpdateJob() {
             vertices = _nVertices,
             triangles = _nTriangles,
             dragForces = _nDragForces,
@@ -72,7 +73,6 @@ public class FuckinAbout : MonoBehaviour
             dragMulti = DragMulti,
             useSimpleDrag = UseSimpleDrag
         };
-
 
          _jHandle = job.Schedule(_mesh.triangles.Length / 3, BatchSize);
     }
@@ -177,7 +177,7 @@ public class FuckinAbout : MonoBehaviour
         _colors[_nTriangles[index + 2]] = c;
     }
 
-    public struct VerletJob : IJobParallelFor
+    public struct DragUpdateJob : IJobParallelFor
     {
         [ReadOnly]
         public NativeArray<int> triangles;

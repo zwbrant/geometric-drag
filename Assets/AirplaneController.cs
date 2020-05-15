@@ -28,7 +28,7 @@ public class AirplaneController : MonoBehaviour
         float xAxis = Input.GetAxis("Mouse X");
 
 
-        Wing.GetComponent<FuckinAbout>().DragMulti += yAxis * .005f;
+        Wing.GetComponent<DragSolver>().DragMulti += yAxis * .005f;
         //Wing.RotateAround(Wing.position, Vector3.right, yAxis);
 
     }
