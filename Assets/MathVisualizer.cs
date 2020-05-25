@@ -49,12 +49,12 @@ public class MathVisualizer : MonoBehaviour
         var r = transform.position + vProject * 1000;
         var q = transform.position - vProject * 1000;
 
-        var sortedPoints = SortByDist(_worldTri.P1, _worldTri.P2, _worldTri.P3, q);
+        var sortedPoints = Math.SortByDist(_worldTri.P1, _worldTri.P2, _worldTri.P3, q);
         r = sortedPoints[0] + vProject * 1000;
         q = sortedPoints[0] - vProject * 1000;
-        Vec3 closeLineP = GetClosestPointOnLine(q, r, sortedPoints[0]);
-        Vec3 midLineP = GetClosestPointOnLine(q, r, sortedPoints[1]);
-        Vec3 farLineP = GetClosestPointOnLine(q, r, sortedPoints[2]);
+        Vec3 closeLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[0]);
+        Vec3 midLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[1]);
+        Vec3 farLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[2]);
 
 
         Debug.DrawLine(sortedPoints[0], sortedPoints[0] + vProject * 3f, Color.red);
@@ -73,7 +73,7 @@ public class MathVisualizer : MonoBehaviour
         Debug.DrawLine(midLineP, midLineP + vh * hAvg, Color.magenta);
 
         // maybe? 
-        var b = (GetClosestPointOnLine(closeLineP, farLineP, _worldTri.Midpoint) - closeLineP).magnitude;
+        var b = (Math.GetClosestPointOnLine(closeLineP, farLineP, _worldTri.Midpoint) - closeLineP).magnitude;
 
         Debug.DrawLine(_worldTri.Midpoint, closeLineP + (Vec3.Normalize(integrateAxis) * b), Color.white);
 
@@ -81,11 +81,11 @@ public class MathVisualizer : MonoBehaviour
 
         var airNorm = Wind / Wind.magnitude;
 
-        var p = projectedArea(_worldTri.vP1P2, _worldTri.vP1P3, airNorm);
+        var p = Math.ProjectedTriArea(_worldTri.vP1P2, _worldTri.vP1P3, airNorm);
 
-        iAvg = IAvg(b, Test, S, axisLength);
+        iAvg = Math.IAvg(b, Test, S, axisLength);
 
-        forceOrigin = O(sortedPoints[0], iAvg, vProject, hAvg, vh);
+        forceOrigin = Math.ForceOrigin(sortedPoints[0], iAvg, vProject, hAvg, vh);
 
         //print("Mid: " + b + " / "  + axisLength);
         //print("Area: " + projectedArea(_worldTri.vP1P2, _worldTri.vP1P3, airNorm));
@@ -116,54 +116,8 @@ public class MathVisualizer : MonoBehaviour
         //Gizmos.DrawLine(_worldTri.Midpoint, startPoint + (Vec3.Normalize(integrateAxis) * avgDist));
     }
 
-    public Vec3 GetClosestPointOnLine(Vec3 a, Vec3 b, Vec3 point)
-    {
-        float t = Vec3.Dot((b - a), (a - point)) / Vec3.Dot((b - a), (b - a));
-        var x = a - t * (b - a);
-
-        return x;
-    }
-
-    public List<Vec3> SortByDist(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 otherPoint)
-    {
-        List<Vec3> result = new List<Vec3> { p1, p2, p3 };
-        result = result.OrderBy(x => Vec3.Distance(x, otherPoint)).ToList<Vec3>();
-
-        return result;
-    }
-
-    public float IAvg(float b, float p, float S, float L)
-    {
-        var top = (2f * b.Pow(3) * (p * (S - 2f) + 2f)) +
-            (b * L.Pow(2) * (p * (4f - 5f * S) - 4f)) +
-            (3f * L.Pow(2) * p * (b - L) * Mathf.Asin(b / L)) +
-            (3f * b * L.Pow(2) * p * Mathf.Acos(b / L));
-
-        var bottom = 4f * ((b.Pow(2) * (p * (S - 3f) + 3f)) +
-            (b * L * (5f * p - 3f)) -
-            (3f * b * L * p * Mathf.Acos(b / L)) +
-            (2f * L.Pow(2) * p * (S - 1f)));
-
-        return top / bottom;
-    }
-
-    public Vec3 O(Vec3 vA, float iAvg, Vec3 vProj, float hAvg, Vec3 vh )
-    {
-        return vA + (iAvg * (vProj / vProj.magnitude)) + (hAvg * vh); 
-
-    }
 
 
-    public float iEstimate(float b, float p, float S, float L)
-    {
-        return 1;
-    }
-
-        public float projectedArea(Vec3 a, Vec3 b, Vec3 airNorm)
-    {
-        return Vec3.Cross(a - airNorm * Vec3.Dot(a, airNorm), 
-            b - airNorm * Vec3.Dot(b, airNorm)).magnitude * .5f;
-    }
 
     public void UpdateTriangle()
     {
