@@ -11,10 +11,10 @@ public class DragSolver : MonoBehaviour
     public const float AirMass = 1f;
 
     [Range(0, 1f)]
-    public float DragMulti = .01f;
+    public float DragMulti = .1f;
     public bool EnableBurst = true;
     public int BatchSize = 32;
-    public bool DebugAngleMags = true;
+    public bool DebugObtuseness = true;
     public bool DebugForceVectors = false;
     public bool DebugVelocityVector = false;
     public bool UseSimpleDrag = false;
@@ -34,7 +34,6 @@ public class DragSolver : MonoBehaviour
     private NativeArray<Vec3> _nDragForces;
     private NativeArray<Vec3> _nMidpoints;
     private NativeArray<DragResult> _nDragResults;
-    private NativeArray<float> _nAngleMags;
 
 
     // Start is called before the first frame update
@@ -77,7 +76,6 @@ public class DragSolver : MonoBehaviour
 
         _nDragForces = new NativeArray<Vec3>(_mesh.triangles.Length / 3, Allocator.TempJob);
         _nMidpoints = new NativeArray<Vec3>(_mesh.triangles.Length / 3, Allocator.TempJob);
-        _nAngleMags = new NativeArray<float>(_mesh.triangles.Length / 3, Allocator.TempJob);
         _nDragResults = new NativeArray<DragResult>(_mesh.triangles.Length / 3, Allocator.TempJob);
 
 
@@ -90,7 +88,6 @@ public class DragSolver : MonoBehaviour
             position = transform.position,
             localScale = transform.localScale,
             airVelocity = -Rbody.velocity,
-            angleMags = _nAngleMags,
             dragMulti = DragMulti,
             useSimpleDrag = UseSimpleDrag,
              dragResults =_nDragResults
@@ -109,8 +106,8 @@ public class DragSolver : MonoBehaviour
         for (int i = 0; i < _nLocalTris.Length; i++)
         {
 
-            if (DebugAngleMags)
-                UpdateDebugColors(i, _nAngleMags[i]);
+            if (DebugObtuseness)
+                UpdateDebugColors(i, _nDragResults[i].Obtuseness);
 
             if (float.IsNaN(_nDragResults[i].DragForce.x) || float.IsNaN(_nDragResults[i].ForceOrigin.x))
                 continue;
@@ -118,17 +115,16 @@ public class DragSolver : MonoBehaviour
 
             if (DebugForceVectors)
                 Debug.DrawLine(_nDragResults[i].ForceOrigin, 
-                    _nDragResults[i].ForceOrigin + _nDragResults[i].DragForce, Color.yellow);
+                    _nDragResults[i].ForceOrigin + _nDragResults[i].DragForce * DragMulti, Color.yellow);
 
         }
 
-        if (DebugAngleMags)
+        if (DebugObtuseness)
             _mesh.colors32 = _colors;
 
         _nDragResults.Dispose();
         _nDragForces.Dispose();
         _nMidpoints.Dispose();
-        _nAngleMags.Dispose();
     }
 
     void FixedUpdate()
@@ -214,27 +210,20 @@ public class DragSolver : MonoBehaviour
         public NativeArray<DragResult> dragResults;
         public NativeArray<Vec3> dragForces;
         public NativeArray<Vec3> midpoints;
-        public NativeArray<float> angleMags;
 
         public void Execute(int index)
         {
-            if (useSimpleDrag)
-                DragV1(index);
-            else
-                DragV2(index);
+           Drag(index);
         }
 
-        public void DragV1(int i)
+        public void Drag(int i)
         {
             DragResult result;
 
             // convert local vertice positions to world
-            var p1 = rotation * Vec3.Scale(localTris[i].P1, localScale) + position;
-            var p2 = rotation * Vec3.Scale(localTris[i].P2, localScale) + position;
-            var p3 = rotation * Vec3.Scale(localTris[i].P3, localScale) + position;
-            //var p1 = Math.TransformPoint(localTris[i].P1, position, rotation, localScale);
-            //var p2 = Math.TransformPoint(localTris[i].P2, position, rotation, localScale);
-            //var p3 = Math.TransformPoint(localTris[i].P3, position, rotation, localScale);
+            var p1 = Math.TransformPoint(localTris[i].P1, position, rotation, localScale);
+            var p2 = Math.TransformPoint(localTris[i].P2, position, rotation, localScale);
+            var p3 = Math.TransformPoint(localTris[i].P3, position, rotation, localScale);
             var tri = new Triangle(p1, p2, p3);
 
             Vec3 windNorm = airVelocity / airVelocity.magnitude;
@@ -247,7 +236,7 @@ public class DragSolver : MonoBehaviour
             cosTheta = Mathf.Clamp(cosTheta, -1, 0);
 
             // magnitude of drag: 180 = 1, 135 = 0.5, < 90 = 0
-            angleMags[i] = Mathf.Abs(cosTheta);
+            result.Obtuseness = Mathf.Abs(cosTheta);
 
             //var velSq = Mathf.Pow(airVelocity.magnitude, 2);
             var velSq = Vec3.Dot(airVelocity, airVelocity);
@@ -260,76 +249,12 @@ public class DragSolver : MonoBehaviour
 
             dragResults[i] = result;
         }
-
-        public void DragV2(int i)
-        {
-            DragResult result;
-            int triIndex = i * 3;
-
-            // convert local vertice positions to world
-            var p1 = Math.TransformPoint(localTris[i].P1, position, rotation, localScale);
-            var p2 = Math.TransformPoint(localTris[i].P2, position, rotation, localScale);
-            var p3 = Math.TransformPoint(localTris[i].P3, position, rotation, localScale);
-            var tri = new Triangle(p1, p2, p3);
-
-            // describes the degree of obtuseness between wind and surface normal
-            float cosTheta = Vec3.Dot(airVelocity, tri.Normal);
-
-            Vec3 windNorm = airVelocity / airVelocity.magnitude;
-            float projArea = Math.ProjectedTriArea(tri.vP1P2, tri.vP1P3, windNorm);
-            var velSq = Mathf.Pow(airVelocity.magnitude, 2);
-
-            result.DragForce = AirMass * projArea * velSq * cosTheta * (1f + cosTheta / 2f) * tri.Normal;
-            result.ForceOrigin = tri.Midpoint;
-
-            dragResults[i] = result;
-        }
-
-        public Vec3 GetForceOrigin(Triangle tri)
-        {
-            Vec3 vProject = airVelocity - (Vec3.Dot(airVelocity, tri.Normal) / tri.Normal.sqrMagnitude) * tri.Normal;
-
-            // figure out which points are closest and farthest from incoming wind vector
-            Vec3 r = tri.Midpoint + vProject * 1000;
-            Vec3 q = tri.Midpoint - vProject * 1000;
-
-            var sortedPoints = Math.SortByDist(tri.P1, tri.P2, tri.P3, q);
-            r = sortedPoints[0] + vProject * 1000;
-            q = sortedPoints[0] - vProject * 1000;
-            Vec3 closeLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[0]);
-            Vec3 midLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[1]);
-            Vec3 farLineP = Math.GetClosestPointOnLine(q, r, sortedPoints[2]);
-
-            Vec3 integrateAxis = farLineP - closeLineP;
-            float axisLength = integrateAxis.magnitude;
-
-            // vector in direction of thickness
-            var vh = Vec3.Normalize(sortedPoints[1] - midLineP);
-            var ve = tri.Incenter - tri.Midpoint;
-            var hAvg = Vec3.Dot(vh, ve);
-
-            float b = (Math.GetClosestPointOnLine(closeLineP, farLineP, tri.Midpoint) - closeLineP).magnitude;
-
-            float S = Mathf.Sqrt(1 - (Mathf.Pow(b, 2) / Mathf.Pow(axisLength, 2)));
-
-            Vec3 airNorm = airVelocity / airVelocity.magnitude;
-
-            var p = Math.ProjectedTriArea(tri.vP1P2, tri.vP1P3, airNorm);
-
-            float iAvg = Math.IAvg(b, 1f, S, axisLength);
-
-            Vec3 forceOrigin = Math.ForceOrigin(sortedPoints[0], iAvg, vProject, hAvg, vh);
-
-            return forceOrigin;
-        }
-
-
-
     }
 
     public struct DragResult {
         public Vec3 DragForce;
         public Vec3 ForceOrigin;
+        public float Obtuseness;
     }
 
     private void OnDisable()

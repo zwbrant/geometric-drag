@@ -86,6 +86,44 @@ namespace Zane
             return vA + (iAvg * (vProj / vProj.magnitude)) + (hAvg * vh);
 
         }
+
+        public static Vec3 GetForceOrigin(Triangle tri, Vec3 airVelocity)
+        {
+            Vec3 vProject = airVelocity - (Vec3.Dot(airVelocity, tri.Normal) / tri.Normal.sqrMagnitude) * tri.Normal;
+
+            // figure out which points are closest and farthest from incoming wind vector
+            Vec3 r = tri.Midpoint + vProject * 1000;
+            Vec3 q = tri.Midpoint - vProject * 1000;
+
+            var sortedPoints = SortByDist(tri.P1, tri.P2, tri.P3, q);
+            r = sortedPoints[0] + vProject * 1000;
+            q = sortedPoints[0] - vProject * 1000;
+            Vec3 closeLineP = GetClosestPointOnLine(q, r, sortedPoints[0]);
+            Vec3 midLineP = GetClosestPointOnLine(q, r, sortedPoints[1]);
+            Vec3 farLineP = GetClosestPointOnLine(q, r, sortedPoints[2]);
+
+            Vec3 integrateAxis = farLineP - closeLineP;
+            float axisLength = integrateAxis.magnitude;
+
+            // vector in direction of thickness
+            var vh = Vec3.Normalize(sortedPoints[1] - midLineP);
+            var ve = tri.Incenter - tri.Midpoint;
+            var hAvg = Vec3.Dot(vh, ve);
+
+            float b = (GetClosestPointOnLine(closeLineP, farLineP, tri.Midpoint) - closeLineP).magnitude;
+
+            float S = Mathf.Sqrt(1 - (Mathf.Pow(b, 2) / Mathf.Pow(axisLength, 2)));
+
+            Vec3 airNorm = airVelocity / airVelocity.magnitude;
+
+            var p = ProjectedTriArea(tri.vP1P2, tri.vP1P3, airNorm);
+
+            float iAvg = IAvg(b, 1f, S, axisLength);
+
+            Vec3 forceOrigin = ForceOrigin(sortedPoints[0], iAvg, vProject, hAvg, vh);
+
+            return forceOrigin;
+        }
     }
 
     public struct Triangle
