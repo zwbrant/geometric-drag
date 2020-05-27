@@ -28,9 +28,9 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1837568235479303465}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.022460256, y: 0.022460256, z: 0.036176767}
+  m_LocalScale: {x: 0.085277095, y: 0.085277095, z: 0.13735595}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -61,7 +61,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b3ada9ea4f0f0bf459d38ce409fb1b94, type: 2}
+  - {fileID: 2100000, guid: d7b3342102cb05f4aafeb2b565a900dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -90,7 +90,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1837568235479303465}
   serializedVersion: 2
-  m_Mass: 2
+  m_Mass: 54.93
   m_Drag: 0
   m_AngularDrag: 0
   m_UseGravity: 1
@@ -105,7 +105,7 @@ MeshCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1837568235479303465}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 0d31284b6184e9443b5db3393c80f3a4, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -124,9 +124,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b229dd3124a2ec34f9ef45442d946ad8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AirForces: []
+  ForceDeadzone: 0.001
   DragMulti: 0.01
   EnableBurst: 1
   BatchSize: 32
-  DebugAngleMags: 1
+  DebugObtuseness: 1
   DebugForceVectors: 0
   DebugVelocityVector: 0
+  UseSimpleDrag: 0
+  MeshFilter: {fileID: 0}
+  Rbody: {fileID: 0}

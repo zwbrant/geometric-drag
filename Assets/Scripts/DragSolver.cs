@@ -170,7 +170,7 @@ public class DragSolver : MonoBehaviour
                 if (!CheckValidity(result, ForceDeadzone))
                     continue;
 
-                Rbody.AddForceAtPosition(result.DragForce * DragMulti, result.ForceOrigin);
+                Rbody.AddForceAtPosition(result.DragForce * Time.deltaTime * DragMulti, result.ForceOrigin);
 
                 obtuseness += result.Obtuseness;
 
